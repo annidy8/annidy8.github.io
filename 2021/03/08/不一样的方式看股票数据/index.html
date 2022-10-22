@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.81.0" />
+
+
+<title>不一样的方式看股票数据 - Annidy&#39;s website</title>
+<meta property="og:title" content="不一样的方式看股票数据 - Annidy&#39;s website">
+
+
+  <link href='/favicon.ico' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
+         width="50"
+         height="50"
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/rstudio/blogdown">GitHub</a></li>
+    
+    <li><a href="https://twitter.com/rstudio">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">2 min read</span>
+    
+
+    <h1 class="article-title">不一样的方式看股票数据</h1>
+
+    
+    <span class="article-date">2021-03-08</span>
+    
+
+    <div class="article-content">
+      
+<script src="/2021/03/08/%E4%B8%8D%E4%B8%80%E6%A0%B7%E7%9A%84%E6%96%B9%E5%BC%8F%E7%9C%8B%E8%82%A1%E7%A5%A8%E6%95%B0%E6%8D%AE/index_files/header-attrs/header-attrs.js"></script>
+
+
+<p>首先声明：本篇博文是网上浏览内容的整理与转载，原始链接地址在<a href="http://freerangestats.info/blog/2021/02/05/stock-visualizations">这里</a>。本文主要内容来自上述网页，另外增加了自己的一些理解与看法，与大家分享。</p>
+<div id="相关函数与数据的加载" class="section level1">
+<h1>相关函数与数据的加载</h1>
+<p>加载了下载股票数据必要的函数包，数据处理包及股票分析包等相关包。选取的分析对象是前期被炒得很火的美国的一支关于游戏零售的公司股票，是百姓股民打败华乐街金融巨鳄的一个传奇，引发了全球的反响与关注。</p>
+<pre class="r"><code>#-----------------Functionality-------------------
+library(quantmod)
+library(tidyverse)
+library(scales)
+library(Cairo)
+library(glue)
+library(lubridate)
+
+#-------------Download stock data--------
+symb &lt;- &quot;GME&quot;
+symb_name = &quot;The GameStop stock bubble of 2021 ($GME)&quot;
+
+options(&quot;getSymbols.warning4.0&quot;=FALSE)  
+this_stock &lt;- getSymbols(symb, src = &#39;yahoo&#39;, auto.assign = FALSE)
+
+# will use just the last 100 values for illustration
+d &lt;- tail(this_stock, 100)
+names(d) &lt;- gsub(glue(&quot;{symb}\\.&quot;), &quot;&quot;, names(d))
+
+annotation_lab &lt;- &quot;Highest plausible actual value based on firm&#39;s revenue, etc.: $20&quot;
+annotation_col &lt;- &quot;steelblue&quot;</code></pre>
+</div>
+<div id="通常的股票灯蜡图" class="section level1">
+<h1>通常的股票灯蜡图</h1>
+<pre class="r"><code>#---------OHLC Chart plus volume bars-----------
+chartSeries(d, theme = chartTheme(&quot;white&quot;, 
+                                    bg.col = &#39;grey96&#39;, 
+                                    fg.col = &quot;grey70&quot;,
+                                    grid.col = &quot;white&quot;, 
+                                    border = &quot;transparent&quot;), 
+            up.col = &#39;darkblue&#39;, dn.col = &#39;tomato&#39;, 
+            log.scale = TRUE,
+            name = symb_name)
+
+# 32 is the number below chosen to appear as 20 on the y axis of top panel, and
+# it totally depends on device size, scale, etc. Caution - set by hand.
+# Basically like drawing a line on by hand.
+abline(32, 0, col = annotation_col)
+text(100, 40, annotation_lab, col = annotation_col, cex = 0.8)</code></pre>
+<p><img src="/2021/03/08/%E4%B8%8D%E4%B8%80%E6%A0%B7%E7%9A%84%E6%96%B9%E5%BC%8F%E7%9C%8B%E8%82%A1%E7%A5%A8%E6%95%B0%E6%8D%AE/index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+</div>
+<div id="不一样的股票图" class="section level1">
+<h1>不一样的股票图</h1>
+<div id="股票时间泡泡序列图" class="section level2">
+<h2>股票时间泡泡序列图</h2>
+<pre class="r"><code>#----------------Line series with bubble points-------------
+d %&gt;%
+  as_tibble() %&gt;%
+  mutate(date = time(d)) %&gt;%
+  ggplot(aes(x = date, y = Close)) +
+  geom_hline(yintercept = 20, colour = &quot;steelblue&quot;) +
+  geom_line() +
+  geom_point(aes(size = Volume / 1e6), alpha = 0.5) +
+  annotate(&quot;text&quot;, x = Sys.Date() - 50, y = 32,  size = 3, hjust = 1, 
+           colour = annotation_col,
+           label = annotation_lab) +
+  scale_y_log10(label = dollar_format(accuracy = 1)) +
+  scale_x_date(date_labels = &quot;%b %Y&quot;) +
+  scale_size_area(label = comma) +
+  labs(x = &quot;&quot;,
+       y = &quot;Closing price (log scale)&quot;,
+       size = &quot;Volume (m)&quot;,
+       caption = &quot;Source: Yahoo Finance, via quantmod R package&quot;,
+       title = symb_name,
+       subtitle = &quot;Line plot for price with volume shown as point size. Intuitive, but not great for showing relationship.&quot;)</code></pre>
+<p><img src="/2021/03/08/%E4%B8%8D%E4%B8%80%E6%A0%B7%E7%9A%84%E6%96%B9%E5%BC%8F%E7%9C%8B%E8%82%A1%E7%A5%A8%E6%95%B0%E6%8D%AE/index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+</div>
+<div id="股票价格与交易量轨迹图" class="section level2">
+<h2>股票价格与交易量轨迹图</h2>
+<pre class="r"><code>d %&gt;%
+  as_tibble() %&gt;%
+  mutate(date = time(d)) %&gt;%
+  group_by(month(date), year(date)) %&gt;%
+  mutate(direction = ifelse(Close &gt; Open, &quot;Bullish&quot;, &quot;Bearish&quot;),
+         lab = ifelse(day(date) == min(day(date)) | Volume &gt; 100e6 | Close &gt; 300, 
+                      format(date, &quot;%e %b %y&quot;), &quot;&quot;)) %&gt;%
+  ungroup() %&gt;%
+  ggplot(aes(x = Volume / 1e6, y = Close, label = lab)) +
+  geom_path(colour = &quot;grey&quot;) +
+  geom_point(aes(colour = direction), alpha = 0.5) +
+  geom_text(aes(colour = direction), hjust = 0, size = 3, nudge_x = 0.015) +
+  scale_x_log10(label = comma_format(suffix = &quot;m&quot;, accuracy = 1),
+                limits = c(1, 300)) +
+  scale_y_log10(label = dollar_format(accuracy = 1)) +
+  scale_colour_manual(values = c(Bullish = &quot;darkblue&quot;, Bearish = &quot;tomato&quot;)) +
+  labs(x = &quot;Volume (log scale)&quot;, 
+     y = &quot;Closing price (log scale)&quot;,
+       title = symb_name,
+       colour = &quot;Direction of sentiment over the day:&quot;,
+       subtitle = &quot;Connected scatter plot. Not intuitive, but shows relationship well.&quot;)</code></pre>
+<p><img src="/2021/03/08/%E4%B8%8D%E4%B8%80%E6%A0%B7%E7%9A%84%E6%96%B9%E5%BC%8F%E7%9C%8B%E8%82%A1%E7%A5%A8%E6%95%B0%E6%8D%AE/index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+</div>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" alt="Img link to Hugo website" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+

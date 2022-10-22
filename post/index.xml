@@ -6,7 +6,18 @@
     <description>Recent content in Posts on Annidy&#39;s website</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 26 Feb 2021 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 08 Mar 2021 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>不一样的方式看股票数据</title>
+      <link>/2021/03/08/%E4%B8%8D%E4%B8%80%E6%A0%B7%E7%9A%84%E6%96%B9%E5%BC%8F%E7%9C%8B%E8%82%A1%E7%A5%A8%E6%95%B0%E6%8D%AE/</link>
+      <pubDate>Mon, 08 Mar 2021 00:00:00 +0000</pubDate>
+      
+      <guid>/2021/03/08/%E4%B8%8D%E4%B8%80%E6%A0%B7%E7%9A%84%E6%96%B9%E5%BC%8F%E7%9C%8B%E8%82%A1%E7%A5%A8%E6%95%B0%E6%8D%AE/</guid>
+      <description>首先声明：本篇博文是网上浏览内容的整理与转载，原始链接地址在这里。本文主要内容来自上述网页，另外增加了自己的一些理解与看法，与大家分享。
+相关函数与数据的加载加载了下载股票数据必要的函数包，数据处理包及股票分析包等相关包。选取的分析对象是前期被炒得很火的美国的一支关于游戏零售的公司股票，是百姓股民打败华乐街金融巨鳄的一个传奇，引发了全球的反响与关注。
+#-----------------Functionality-------------------library(quantmod)library(tidyverse)library(scales)library(Cairo)library(glue)library(lubridate)#-------------Download stock data--------symb &amp;lt;- &amp;quot;GME&amp;quot;symb_name = &amp;quot;The GameStop stock bubble of 2021 ($GME)&amp;quot;options(&amp;quot;getSymbols.warning4.0&amp;quot;=FALSE) this_stock &amp;lt;- getSymbols(symb, src = &amp;#39;yahoo&amp;#39;, auto.assign = FALSE)# will use just the last 100 values for illustrationd &amp;lt;- tail(this_stock, 100)names(d) &amp;lt;- gsub(glue(&amp;quot;{symb}\\.&amp;quot;), &amp;quot;&amp;quot;, names(d))annotation_lab &amp;lt;- &amp;quot;Highest plausible actual value based on firm&amp;#39;s revenue, etc.: $20&amp;quot;annotation_col &amp;lt;- &amp;quot;steelblue&amp;quot;通常的股票灯蜡图#---------OHLC Chart plus volume bars-----------chartSeries(d, theme = chartTheme(&amp;quot;white&amp;quot;, bg.</description>
+    </item>
+    
     <item>
       <title>博客创建过程简记</title>
       <link>/2021/02/26/the-first-blog-test/</link>
