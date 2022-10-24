@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.81.0" />
+
+
+<title>绘制带有阴影的高程立体图 - Annidy&#39;s website</title>
+<meta property="og:title" content="绘制带有阴影的高程立体图 - Annidy&#39;s website">
+
+
+  <link href='/favicon.ico' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
+         width="50"
+         height="50"
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/rstudio/blogdown">GitHub</a></li>
+    
+    <li><a href="https://twitter.com/rstudio">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">2 min read</span>
+    
+
+    <h1 class="article-title">绘制带有阴影的高程立体图</h1>
+
+    
+    <span class="article-date">2022-10-23</span>
+    
+
+    <div class="article-content">
+      
+<script src="/2022/10/23/elevation-map-with-shading/index_files/header-attrs/header-attrs.js"></script>
+
+
+<p>声明：本篇博文是网上浏览内容的整理与转载，原始链接地址在<a href="https://dieghernan.github.io/202210_tidyterra-hillshade/">这里</a>。</p>
+<p>网络上收集到的优秀网文，并通过自己的实践得到证实完全可行，在此复现、记录，以备后续有需要时再加以使用。</p>
+<pre class="r"><code>## Libraries
+library(terra)
+library(tidyterra)
+library(ggplot2)
+library(dplyr)
+library(scales)
+
+# Get the data
+library(geodata)
+
+# Cache map data
+mydir &lt;- &quot;D:/work/backup/OneDriver/OneDrive/文档/实践代码/mapslib&quot;
+r_init &lt;- elevation_30s(&quot;ROU&quot;, path = mydir)
+
+# For better handling we set here the names
+names(r_init) &lt;- &quot;alt&quot;
+
+# We don&#39;t want values lower than 0
+r &lt;- r_init %&gt;%
+    mutate(alt = pmax(0, alt))
+
+## Create hillshade effect
+slope &lt;- terrain(r, &quot;slope&quot;, unit = &quot;radians&quot;)
+aspect &lt;- terrain(r, &quot;aspect&quot;, unit = &quot;radians&quot;)
+hill &lt;- shade(slope, aspect, 30, 270)
+
+# normalize names
+names(hill) &lt;- &quot;shades&quot;
+
+# Hillshading, but we need a palette
+pal_greys &lt;- hcl.colors(1000, &quot;Grays&quot;)
+
+# Use a vector of colors
+index &lt;- hill %&gt;%
+    mutate(index_col = rescale(shades, to = c(1, length(pal_greys)))) %&gt;%
+    mutate(index_col = round(index_col)) %&gt;%
+    pull(index_col)
+
+# Get cols
+vector_cols &lt;- pal_greys[index]
+
+# Need to avoid resampling
+# and dont use aes
+hill_plot &lt;- ggplot() +
+    geom_spatraster(
+    data = hill, fill = vector_cols, maxcell = Inf,
+    alpha = 1
+  )
+
+
+# Try some options, but we need to be aware of the values of our raster
+r_limits &lt;- minmax(r) %&gt;% as.vector()
+
+# Rounded to lower and upper 500
+r_limits &lt;- c(floor(r_limits[1] / 500), ceiling(r_limits[2] / 500)) * 500
+
+# And making min value to 0.
+r_limits &lt;- pmax(r_limits, 0)
+
+
+base_plot &lt;- hill_plot +
+    # Avoid resampling with maxcell
+    geom_spatraster(data = r, maxcell = Inf) +
+    scale_fill_hypso_tint_c(
+    limits = r_limits,
+    palette = &quot;dem_poster&quot;,
+    alpha = 0.4,
+    labels = label_comma(),
+# For the legend I use custom breaks
+    breaks = c(
+      seq(0, 500, 100),
+      seq(750, 1500, 250),
+      2000
+    )
+  )
+
+# Adjust text size
+base_text_size &lt;- 12
+
+base_plot +
+    # Change guide
+    guides(fill = guide_legend(
+    title = &quot;   m.&quot;,
+    direction = &quot;horizontal&quot;,
+    nrow = 1,
+    keywidth = 1.75,
+    keyheight = 0.5,
+    label.position = &quot;bottom&quot;,
+    title.position = &quot;right&quot;,
+    override.aes = list(alpha = 1)
+  )) +
+  labs(
+    title = &quot;Elevation of Romania&quot;,
+    subtitle = &quot;Hillshade and hypsometric tint blend&quot;,
+    caption = paste0(
+      &quot;@dhernangomez using tidyterra, ggplot2, geodata R packages.&quot;,
+      &quot; Data: Shuttle Radar Topography Mission (SRTM)&quot;
+    )
+  ) +
+  theme_minimal(base_family = &quot;notoserif&quot;) +
+  theme(
+    plot.background = element_rect(&quot;grey97&quot;, colour = NA),
+    plot.margin = margin(20, 20, 20, 20),
+    plot.caption = element_text(size = base_text_size * 0.5),
+    plot.title = element_text(face = &quot;bold&quot;, size = base_text_size * 1.4),
+    plot.subtitle = element_text(
+      margin = margin(b = 10),
+      size = base_text_size
+    ),
+    axis.text = element_text(size = base_text_size * 0.7),
+    legend.position = &quot;bottom&quot;,
+    legend.title = element_text(size = base_text_size * 0.8),
+    legend.text = element_text(size = base_text_size * 0.8),
+    legend.key = element_rect(&quot;grey50&quot;),
+    legend.spacing.x = unit(0, &quot;pt&quot;)
+  )</code></pre>
+<p><img src="/2022/10/23/elevation-map-with-shading/index_files/figure-html/unnamed-chunk-1-1.png" width="720" /></p>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" alt="Img link to Hugo website" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+
+    
+  </body>
+</html>
+

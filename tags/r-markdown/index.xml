@@ -6,7 +6,18 @@
     <description>Recent content in R Markdown on Annidy&#39;s website</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 08 Mar 2021 00:00:00 +0000</lastBuildDate><atom:link href="/tags/r-markdown/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 23 Oct 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/r-markdown/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>绘制带有阴影的高程立体图</title>
+      <link>/2022/10/23/elevation-map-with-shading/</link>
+      <pubDate>Sun, 23 Oct 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/2022/10/23/elevation-map-with-shading/</guid>
+      <description>声明：本篇博文是网上浏览内容的整理与转载，原始链接地址在这里。
+网络上收集到的优秀网文，并通过自己的实践得到证实完全可行，在此复现、记录，以备后续有需要时再加以使用。
+## Librarieslibrary(terra)library(tidyterra)library(ggplot2)library(dplyr)library(scales)# Get the datalibrary(geodata)# Cache map datamydir &amp;lt;- &amp;quot;D:/work/backup/OneDriver/OneDrive/文档/实践代码/mapslib&amp;quot;r_init &amp;lt;- elevation_30s(&amp;quot;ROU&amp;quot;, path = mydir)# For better handling we set here the namesnames(r_init) &amp;lt;- &amp;quot;alt&amp;quot;# We don&amp;#39;t want values lower than 0r &amp;lt;- r_init %&amp;gt;%mutate(alt = pmax(0, alt))## Create hillshade effectslope &amp;lt;- terrain(r, &amp;quot;slope&amp;quot;, unit = &amp;quot;radians&amp;quot;)aspect &amp;lt;- terrain(r, &amp;quot;aspect&amp;quot;, unit = &amp;quot;radians&amp;quot;)hill &amp;lt;- shade(slope, aspect, 30, 270)# normalize namesnames(hill) &amp;lt;- &amp;quot;shades&amp;quot;# Hillshading, but we need a palettepal_greys &amp;lt;- hcl.</description>
+    </item>
+    
     <item>
       <title>不一样的方式看股票数据</title>
       <link>/2021/03/08/%E4%B8%8D%E4%B8%80%E6%A0%B7%E7%9A%84%E6%96%B9%E5%BC%8F%E7%9C%8B%E8%82%A1%E7%A5%A8%E6%95%B0%E6%8D%AE/</link>
